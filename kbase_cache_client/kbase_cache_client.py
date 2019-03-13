@@ -18,7 +18,7 @@ class kbase_cache_client:
 
         headers = {'Content-type': 'application/json', 'Authorization': self.service_token}
         endpoint = self.cacheurl + self.cache_id
-        req_call = requests.get(endpoint, headers=headers)
+        req_call = requests.get(endpoint, data=json.dumps(identifiers), headers=headers)
 
         if req_call.get('error'):
             raise ValueError(req_call.get('error'))
