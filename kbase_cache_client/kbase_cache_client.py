@@ -3,7 +3,7 @@ import json
 from pprint import pprint as pp
 
 
-class kbase_cache_client:
+class KBaseCacheClient:
     def __init__(self, service, cache_id, service_token):
         self.callback = service
         if not self.callback.endswith('/'):
