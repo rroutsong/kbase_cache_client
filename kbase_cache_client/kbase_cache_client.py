@@ -1,15 +1,14 @@
-import requests
-import json
+import requests, json
 from pprint import pprint as pp
 
 
 class KBaseCacheClient:
-    def __init__(self, service, cache_id, service_token):
+    def __init__(self, service, service_token, cache_id=None):
         self.callback = service
         if not self.callback.endswith('/'):
-            self.cacheurl = self.callback + '/v1/cache/'
+            self.cacheurl = self.callback + '/v1/cache'
         else:
-            self.cacheurl = self.callback + 'v1/cache/'
+            self.cacheurl = self.callback + 'v1/cache'
         self.service_token = service_token
         self.cache_id = cache_id
 
@@ -18,14 +17,15 @@ class KBaseCacheClient:
             raise ValueError('Identifiers for cache id must be in dictionary format.')
 
         headers = {'Content-type': 'application/json', 'Authorization': self.service_token}
-        endpoint = self.cacheurl + self.cache_id
-        req_call = requests.get(endpoint, data=json.dumps(identifiers), headers=headers)
+        endpoint = self.cacheurl + '/cache_id'
 
-        # TODO there is no 'get' method on req_call unless we do req_call.json()
-        if req_call.get('error'):
+        pp(endpoint)
+        req_call = requests.get(endpoint, data=json.dumps(identifiers), headers=headers)
+        pp(req_call)
+
+        if req_call.json().get('error'):
             raise ValueError(req_call.get('error'))
         else:
-            # TODO this won't be indexable unless we do req_call.json()
             return req_call['cache_id']
 
     def download_cache(self, destination):
@@ -34,22 +34,19 @@ class KBaseCacheClient:
         req_call = requests.get(endpoint, headers=headers, stream=True)
 
         if req_call.status_code == 200:
-            print('Downloading cache '+self.cache_id+'...\nTo: '+destination)
+            print(f'Downloading cache {self.cache_id}...\nTo: {destination}')
             with open(destination, 'wb') as f:
-                # TODO resp is not defined anywhere
-                for blob in resp.iter_content():
+                for blob in req_call.iter_content():
                     f.write(blob)
                 f.close()
         elif req_call.status_code == 404:
-            raise ValueError('Cache with id '+self.cache_id+' does not exist')
-        # TODO Response object has no method 'get' (need to do req_call.json())
-        elif req_call.get('error'):
-            pp(req_call['error'])
+            raise ValueError(f'Cache with id {self.cache_id} does not exist')
+        elif req_call.json().get('error'):
+            pp(req_call.json().get('error'))
             raise ValueError('An error with the request occurred see above error message.')
         else:
             pp(req_call)
-            # TODO status code will be an integer, not a string. This will fail
-            raise ValueError('Request status code: '+req_call.status_code+'\n Unable to complete request action')
+            raise ValueError(f'Request status code: {req_call.status_code}\n Unable to complete request action')
 
     def upload_cache(self, source):
         headers = {'Authorization': self.service_token}
@@ -60,14 +57,12 @@ class KBaseCacheClient:
         if req_call.status_code == 200:
             print('Cache ' + self.cache_id + ' has been successfully uploaded')
             return True
-        # TODO Response object has no method 'get'
-        elif req_call.get('error'):
-            pp(req_call['error'])
+        elif req_call.json().get('error'):
+            pp(req_call.json().get('error'))
             raise ValueError('An error with the request occurred see above error message.')
         else:
             pp(req_call)
-            # TODO status_code will be an int. Use a f"" style string
-            raise ValueError('Request status code: '+req_call.status_code+'\n Unable to complete request action')
+            raise ValueError(f'Request status code: {req_call.status_code}\n Unable to complete request action')
 
     def delete_cache(self):
         headers = {'Authorization': self.service_token}
@@ -79,9 +74,8 @@ class KBaseCacheClient:
             return True
         elif req_call.status_code == 404:
                 raise ValueError('Cache with id ' + self.cache_id + ' does not exist')
-        # TODO Response object has no method 'get'
-        elif req_call.get('error'):
-            pp(req_call['error'])
+        elif req_call.json().get('error'):
+            pp(req_call.json().get('error'))
             raise ValueError('An error with the request occurred see above error message.')
         else:
             pp(req_call)
