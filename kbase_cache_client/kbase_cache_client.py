@@ -28,7 +28,7 @@ class KBaseCacheClient:
             # TODO this won't be indexable unless we do req_call.json()
             return req_call['cache_id']
 
-    def downld_cache(self, destination):
+    def download_cache(self, destination):
         headers = {'Content-type': 'application/json', 'Authorization': self.service_token}
         endpoint = self.cacheurl + self.cache_id
         req_call = requests.get(endpoint, headers=headers, stream=True)
@@ -51,7 +51,7 @@ class KBaseCacheClient:
             # TODO status code will be an integer, not a string. This will fail
             raise ValueError('Request status code: '+req_call.status_code+'\n Unable to complete request action')
 
-    def upld_cache(self, source):
+    def upload_cache(self, source):
         headers = {'Authorization': self.service_token}
         endpoint = self.cacheurl + self.cache_id
         with open(source, 'rb') as f:
