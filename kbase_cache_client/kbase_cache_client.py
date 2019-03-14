@@ -2,7 +2,8 @@ import requests
 import json
 from pprint import pprint as pp
 
-class kbase_cache_client:
+
+class KBaseCacheClient:
     def __init__(self, service, cache_id, service_token):
         self.callback = service
         if not self.callback.endswith('/'):
@@ -20,12 +21,14 @@ class kbase_cache_client:
         endpoint = self.cacheurl + self.cache_id
         req_call = requests.get(endpoint, data=json.dumps(identifiers), headers=headers)
 
+        # TODO there is no 'get' method on req_call unless we do req_call.json()
         if req_call.get('error'):
             raise ValueError(req_call.get('error'))
         else:
+            # TODO this won't be indexable unless we do req_call.json()
             return req_call['cache_id']
 
-    def downld_cache(self, destination):
+    def download_cache(self, destination):
         headers = {'Content-type': 'application/json', 'Authorization': self.service_token}
         endpoint = self.cacheurl + self.cache_id
         req_call = requests.get(endpoint, headers=headers, stream=True)
@@ -33,19 +36,22 @@ class kbase_cache_client:
         if req_call.status_code == 200:
             print('Downloading cache '+self.cache_id+'...\nTo: '+destination)
             with open(destination, 'wb') as f:
+                # TODO resp is not defined anywhere
                 for blob in resp.iter_content():
                     f.write(blob)
                 f.close()
         elif req_call.status_code == 404:
             raise ValueError('Cache with id '+self.cache_id+' does not exist')
+        # TODO Response object has no method 'get' (need to do req_call.json())
         elif req_call.get('error'):
             pp(req_call['error'])
             raise ValueError('An error with the request occurred see above error message.')
         else:
             pp(req_call)
+            # TODO status code will be an integer, not a string. This will fail
             raise ValueError('Request status code: '+req_call.status_code+'\n Unable to complete request action')
 
-    def upld_cache(self, source):
+    def upload_cache(self, source):
         headers = {'Authorization': self.service_token}
         endpoint = self.cacheurl + self.cache_id
         with open(source, 'rb') as f:
@@ -54,11 +60,13 @@ class kbase_cache_client:
         if req_call.status_code == 200:
             print('Cache ' + self.cache_id + ' has been successfully uploaded')
             return True
+        # TODO Response object has no method 'get'
         elif req_call.get('error'):
             pp(req_call['error'])
             raise ValueError('An error with the request occurred see above error message.')
         else:
             pp(req_call)
+            # TODO status_code will be an int. Use a f"" style string
             raise ValueError('Request status code: '+req_call.status_code+'\n Unable to complete request action')
 
     def delete_cache(self):
@@ -71,6 +79,7 @@ class kbase_cache_client:
             return True
         elif req_call.status_code == 404:
                 raise ValueError('Cache with id ' + self.cache_id + ' does not exist')
+        # TODO Response object has no method 'get'
         elif req_call.get('error'):
             pp(req_call['error'])
             raise ValueError('An error with the request occurred see above error message.')
