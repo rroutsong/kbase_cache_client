@@ -6,9 +6,9 @@ class KBaseCacheClient:
     def __init__(self, service, service_token, cache_id=None):
         self.callback = service
         if not self.callback.endswith('/'):
-            self.cacheurl = self.callback + '/v1/cache'
+            self.cacheurl = self.callback + '/cache/v1'
         else:
-            self.cacheurl = self.callback + 'v1/cache'
+            self.cacheurl = self.callback + 'cache/v1'
         self.service_token = service_token
         self.cache_id = cache_id
 
@@ -79,4 +79,4 @@ class KBaseCacheClient:
             raise ValueError('An error with the request occurred see above error message.')
         else:
             pp(req_call)
-            raise ValueError('Request status code: ' + req_call.status_code + '\n Unable to complete request action')
+            raise ValueError(f'Request status code: {req_call.status_code}\n Unable to complete request action')
