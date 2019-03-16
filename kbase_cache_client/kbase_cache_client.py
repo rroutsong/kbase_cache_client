@@ -1,6 +1,16 @@
-import requests, json
+import requests
+import json
 from pprint import pprint as pp
 
+
+class NoCacheIdentifiers(Exception):
+    pass
+
+class HTTPRequestError(Exception):
+    pass
+
+class UnknownRequestError(Exception):
+    pass
 
 class KBaseCacheClient:
     def __init__(self, service, service_token, cache_id=None):
@@ -14,7 +24,7 @@ class KBaseCacheClient:
 
     def generate_cacheid(self, identifiers):
         if not isinstance(identifiers, dict):
-            raise ValueError('Identifiers for cache id must be in dictionary format.')
+            raise NoCacheIdentifiers('Identifiers for cache id must be in dictionary format.')
 
         headers = {'Content-type': 'application/json', 'Authorization': self.service_token}
         endpoint = self.cacheurl + '/cache_id'
@@ -24,7 +34,7 @@ class KBaseCacheClient:
         pp(req_call)
 
         if req_call.json().get('error'):
-            raise ValueError(req_call.get('error'))
+            raise HTTPRequestError(req_call.get('error'))
         else:
             return req_call['cache_id']
 
@@ -43,10 +53,11 @@ class KBaseCacheClient:
             raise ValueError(f'Cache with id {self.cache_id} does not exist')
         elif req_call.json().get('error'):
             pp(req_call.json().get('error'))
-            raise ValueError('An error with the request occurred see above error message.')
+            raise HTTPRequestError('An error with the request occurred see above error message.')
         else:
             pp(req_call)
-            raise ValueError(f'Request status code: {req_call.status_code}\n Unable to complete request action')
+            raise UnknownRequestError(f'Request status code: {req_call.status_code}\n '
+                             f'Unable to complete request action')
 
     def upload_cache(self, source):
         headers = {'Authorization': self.service_token}
@@ -59,10 +70,11 @@ class KBaseCacheClient:
             return True
         elif req_call.json().get('error'):
             pp(req_call.json().get('error'))
-            raise ValueError('An error with the request occurred see above error message.')
+            raise HTTPRequestError('An error with the request occurred see above error message.')
         else:
             pp(req_call)
-            raise ValueError(f'Request status code: {req_call.status_code}\n Unable to complete request action')
+            raise UnknownRequestError(f'Request status code: {req_call.status_code}\n'
+                             f'Unable to complete request action')
 
     def delete_cache(self):
         headers = {'Authorization': self.service_token}
@@ -70,13 +82,13 @@ class KBaseCacheClient:
         req_call = requests.delete(endpoint, headers=headers)
 
         if req_call.status_code == 200:
-            print('Cache ' + self.cache_id + ' has been deleted.')
+            print(f'Cache {self.cache_id} has been deleted.')
             return True
         elif req_call.status_code == 404:
-                raise ValueError('Cache with id ' + self.cache_id + ' does not exist')
+            raise ValueError('Cache with id ' + self.cache_id + ' does not exist')
         elif req_call.json().get('error'):
             pp(req_call.json().get('error'))
-            raise ValueError('An error with the request occurred see above error message.')
+            raise HTTPRequestError('An error with the request occurred see above error message.')
         else:
             pp(req_call)
-            raise ValueError(f'Request status code: {req_call.status_code}\n Unable to complete request action')
+            raise UnknownRequestError(f'Request status code: {req_call.status_code}\n Unable to complete request action')
