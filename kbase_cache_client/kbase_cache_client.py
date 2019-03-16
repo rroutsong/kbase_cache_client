@@ -1,6 +1,22 @@
 import requests
 import json
+import configparser
+import os
 from pprint import pprint as pp
+
+
+config = configparser.ConfigParser()
+if os.path.exists('test.cfg'):
+    config.read('test.cfg')
+
+    if not config['SERVICE']['TOKEN']:
+        raise ValueError('Please set your service token in test.cfg, as:\n'
+                         '[SERVICE]\nTOKEN=<token>.\n'
+                         'Consult KBase Administrators if you are not sure how to generate a token')
+else:
+    raise FileNotFoundError('Please create test.cfg and set your service token as:\n'
+                            '[SERVICE]\nTOKEN=<token>\n'
+                            'Consult KBase Administrators if you are not sure how to generate a token')
 
 
 class NoCacheIdentifiers(Exception):
@@ -13,13 +29,13 @@ class UnknownRequestError(Exception):
     pass
 
 class KBaseCacheClient:
-    def __init__(self, service, service_token, cache_id=None):
+    def __init__(self, service, cache_id=None):
         self.callback = service
         if not self.callback.endswith('/'):
             self.cacheurl = self.callback + '/cache/v1'
         else:
             self.cacheurl = self.callback + 'cache/v1'
-        self.service_token = service_token
+        self.service_token = config['SERVICE']['TOKEN']
         self.cache_id = cache_id
 
     def generate_cacheid(self, identifiers):

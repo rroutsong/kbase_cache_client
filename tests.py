@@ -8,16 +8,18 @@ class TestKbaseCacheClient(unittest.TestCase):
     @classmethod
     def setUp(cls):
         cls.KBC = KBaseCacheClient('https://ci.kbase.us/services/')
-        cls.test_dir = os.path.join(os.path.basename(__file__), 'tests')
+        cls.test_dir = os.path.join(os.path.dirname(__file__), 'tests')
+        if not os.path.exists(cls.test_dir):
+            os.mkdir(cls.test_dir)
         cls.test_file = os.path.join(cls.test_dir, 'tests.txt')
-
-        text_file = open(cls.test_file, "w")
-        text_file.write('This is the file to test the cache client module')
-        text_file.close()
+        if not os.path.exists(cls.test_file):
+            text_file = open(cls.test_file, "w")
+            text_file.write('This is the file to test the cache client module')
+            text_file.close()
 
     @classmethod
     def tearDownClass(cls):
-        shutils.rmtree(cls.test_dir)
+        shutil.rmtree(cls.test_dir)
 
     def test_gen_cache_id(self):
         return True
