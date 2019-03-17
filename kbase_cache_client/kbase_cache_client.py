@@ -6,13 +6,14 @@ from pprint import pprint as pp
 
 
 config = configparser.ConfigParser()
-if os.path.exists('test.cfg'):
+if os.path.exists('test.cfg') or os.getenv('KBASE_CACHE_TOKEN', None):
     config.read('test.cfg')
 
     if not config['SERVICE']['TOKEN']:
-        if not os.environ['KBASE_CACHE_TOKEN']:
+        if not os.getenv('KBASE_CACHE_TOKEN', None):
             raise ValueError('Please set your service token in test.cfg, as:\n'
                              '[SERVICE]\nTOKEN=<token>.\n'
+                             'Or as an environmental variable KBASE_CACHE_TOKEN\n'
                              'Consult KBase Administrators if you are not sure how to generate a token')
 else:
     raise FileNotFoundError('Please create test.cfg and set your service token as:\n'
