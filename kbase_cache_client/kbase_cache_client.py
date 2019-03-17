@@ -10,9 +10,10 @@ if os.path.exists('test.cfg'):
     config.read('test.cfg')
 
     if not config['SERVICE']['TOKEN']:
-        raise ValueError('Please set your service token in test.cfg, as:\n'
-                         '[SERVICE]\nTOKEN=<token>.\n'
-                         'Consult KBase Administrators if you are not sure how to generate a token')
+        if not os.environ['KBASE_CACHE_TOKEN']:
+            raise ValueError('Please set your service token in test.cfg, as:\n'
+                             '[SERVICE]\nTOKEN=<token>.\n'
+                             'Consult KBase Administrators if you are not sure how to generate a token')
 else:
     raise FileNotFoundError('Please create test.cfg and set your service token as:\n'
                             '[SERVICE]\nTOKEN=<token>\n'
@@ -35,7 +36,10 @@ class KBaseCacheClient:
             self.cacheurl = self.callback + '/cache/v1'
         else:
             self.cacheurl = self.callback + 'cache/v1'
-        self.service_token = config['SERVICE']['TOKEN']
+        if config['SERVICE']['TOKEN']:
+            self.service_token = config['SERVICE']['TOKEN']
+        elif os.environ['KBASE_CACHE_TOKEN']:
+            self.service_token = os.environ['KBASE_CACHE_TOKEN']
         self.cache_id = cache_id
 
     def generate_cacheid(self, identifiers):
