@@ -22,17 +22,23 @@ class TestKbaseCacheClient(unittest.TestCase):
         shutil.rmtree(cls.test_dir)
 
     def test_gen_cache_id(self):
-        return True
+        self.cacheid = self.KBC.generate_cacheid({'test': 'this is a test identifier to id a cache file'})
+        print(f'Cache ID is {self.cacheid}')
+    """
 
     def test_upload_cache(self):
-        return True
+        source = self.test_file
+        self.KBC.upload_cache(source)
 
     def test_download_cache(self):
-        return True
+        destination = os.path.join(self.test_dir, 'cache')
+        os.mkdir(destination)
+
+        self.KBC.download_cache(destination)
 
     def test_delete_cache(self):
-        return True
-
+        self.KBC.delete_cache()
+    """
 
 if __name__ == '__main__':
     unittest.main()

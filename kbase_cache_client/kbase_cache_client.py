@@ -31,8 +31,14 @@ class HTTPRequestError(Exception):
 class UnknownRequestError(Exception):
     pass
 
+class DownloadDirNotaDir(Exception):
+    pass
+
+class DownloadDirNotWritable(Exception):
+    pass
+
 class KBaseCacheClient:
-    def __init__(self, service, cache_id=None):
+    def __init__(self, service, cache_id=""):
         self.callback = service
         if not self.callback.endswith('/'):
             self.cacheurl = self.callback + '/cache/v1'
@@ -49,21 +55,33 @@ class KBaseCacheClient:
             raise NoCacheIdentifiers('Identifiers for cache id must be in dictionary format.')
 
         headers = {'Content-type': 'application/json', 'Authorization': self.service_token}
-        endpoint = self.cacheurl + '/cache_id'
 
-        pp(endpoint)
-        req_call = requests.get(endpoint, data=json.dumps(identifiers), headers=headers)
-        pp(req_call)
-
-        if req_call.json().get('error'):
-            raise HTTPRequestError(req_call.get('error'))
+        if not self.callback.endswith('/'):
+            endpoint = self.callback + '/cache/v1/cache_id'
         else:
+            endpoint = self.callback + 'cache/v1/cache_id'
+
+        req_call = requests.post(endpoint, data=json.dumps(identifiers), headers=headers)
+        pp(req_call)
+        exit(endpoint)
+
+        if req_call.get('error'):
+            pp(req_call)
+            raise HTTPRequestError(req_call.json().get('error'))
+        else:
+            self.cache_id = req_call['cache_id']
             return req_call['cache_id']
 
     def download_cache(self, destination):
         headers = {'Content-type': 'application/json', 'Authorization': self.service_token}
         endpoint = self.cacheurl + self.cache_id
         req_call = requests.get(endpoint, headers=headers, stream=True)
+
+        if not os.path.isdir(destination):
+            raise DownloadDirNotaDir('Please pass a writeable directory path to download_cache')
+        else:
+            if not os.access(destination, os.W_OK):
+                raise DownloadDirNotWriteable('Please pass a writeable directory path to download_cache')
 
         if req_call.status_code == 200:
             print(f'Downloading cache {self.cache_id}...\nTo: {destination}')
