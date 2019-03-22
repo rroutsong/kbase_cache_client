@@ -6,7 +6,7 @@ from pprint import pprint as pp
 
 
 config = configparser.ConfigParser()
-if os.path.exists('test.cfg') or os.getenv('KBASE_CACHE_TOKEN', None):
+if os.path.exists('test.cfg'):
     config.read('test.cfg')
 
     if not config.get('KBASE_CACHE_SERVICE', 'TOKEN', fallback=None):
@@ -16,10 +16,11 @@ if os.path.exists('test.cfg') or os.getenv('KBASE_CACHE_TOKEN', None):
                              'Or as an environmental variable KBASE_CACHE_TOKEN\n'
                              'Consult KBase Administrators if you are not sure how to generate a token')
 else:
-    raise FileNotFoundError('Please create test.cfg and set your service token as:\n'
-                            '[KBASE_CACHE_SERVICE]\nTOKEN=<token>\n'
-                            'Or as an environmental variable KBASE_CACHE_TOKEN\n'
-                            'Consult KBase Administrators if you are not sure how to generate a token')
+    if not os.getenv('KBASE_CACHE_TOKEN', None):
+        raise FileNotFoundError('Please create test.cfg and set your service token as:\n'
+                                '[KBASE_CACHE_SERVICE]\nTOKEN=<token>\n'
+                                'Or as an environmental variable KBASE_CACHE_TOKEN\n'
+                                'Consult KBase Administrators if you are not sure how to generate a token')
 
 
 class NoCacheIdentifiers(Exception):
