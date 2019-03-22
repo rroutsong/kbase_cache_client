@@ -8,4 +8,7 @@ setup(
     packages=['kbase_cache_client'],
     license='MIT License',
     long_description=open('README.md').read(),
+    install_requires=[
+        'requests>=2.20',
+    ]
 )
