@@ -3,8 +3,8 @@ import json
 import configparser
 import os
 from pprint import pprint as pp
-from .exceptions import NoCacheIdentifiers, HTTPRequestError, UnknownRequestError, DownloadDirNotaDir, \
-    DownloadDirNotWriteable, CacheNonexistent, AuthorizationTokenNotSet
+from .exceptions import NoCacheIdentifiers, HTTPRequestError, UnknownRequestError, DownloadDirNotWriteable, \
+    CacheNonexistent, AuthorizationTokenNotSet
 
 config = configparser.ConfigParser()
 if os.path.exists('test.cfg'):
@@ -12,16 +12,17 @@ if os.path.exists('test.cfg'):
 
     if not config.get('KBASE_CACHE_SERVICE', 'TOKEN', fallback=None):
         if not os.getenv('KBASE_CACHE_TOKEN', None):
-            raise ValueError('Please set your service token in test.cfg, as:\n'
-                             '[KBASE_CACHE_SERVICE]\nTOKEN=<token>.\n'
-                             'Or as an environmental variable KBASE_CACHE_TOKEN\n'
-                             'Consult KBase Administrators if you are not sure how to generate a token')
+            raise IOError('Please set your service token in test.cfg, as:\n'
+                          '[KBASE_CACHE_SERVICE]\nTOKEN=<token>.\n'
+                          'Or as an environmental variable KBASE_CACHE_TOKEN\n'
+                          'Consult KBase Administrators if you are not sure how to generate a token')
 else:
     if not os.getenv('KBASE_CACHE_TOKEN', None):
-        raise FileNotFoundError('Please create test.cfg and set your service token as:\n'
-                                '[KBASE_CACHE_SERVICE]\nTOKEN=<token>\n'
-                                'Or as an environmental variable KBASE_CACHE_TOKEN\n'
-                                'Consult KBase Administrators if you are not sure how to generate a token')
+        raise IOError('Please create test.cfg and set your service token as:\n'
+                      '[KBASE_CACHE_SERVICE]\nTOKEN=<token>\n'
+                      'Or as an environmental variable KBASE_CACHE_TOKEN\n'
+                      'Consult KBase Administrators if you are not sure how to generate a token')
+
 
 class KBaseCacheClient:
     def generate_cacheid(self, identifiers):
@@ -66,24 +67,33 @@ class KBaseCacheClient:
         endpoint = self.cacheurl + 'cache/' + cache_id
         req_call = requests.get(endpoint, headers=headers, stream=True)
 
+        if not os.path.isdir(destination):
+            dirpath = os.path.dirname(destination)
+            if not os.access(dirpath, os.W_OK):
+                raise DownloadDirNotWriteable('Please pass a writeable directory to download a cache file to.')
+        else:
+            if not os.access(destination, os.W_OK):
+                raise DownloadDirNotWriteable('Please pass a writeable directory to download a cache file to.')
+
         if req_call.status_code == 200:
-            print(f'Downloading cache {self.cache_id}...\nTo: {destination}')
+            print('Downloading cache ' + cache_id + '...\nTo: ' + destination)
             with open(destination, 'wb') as f:
                 for blob in req_call.iter_content():
                     f.write(blob)
                 f.close()
         elif req_call.status_code == 404:
-            raise ValueError(f'Cache with id {self.cache_id} does not exist')
+            print('Response code HTTP 404')
+            raise HTTPRequestError('Endpoint url: ' + endpoint + ' does not exist.')
         elif req_call.json().get('error'):
-            if req_call.json().get('error') is 'Cache ID not found':
+            if req_call.json().get('error') == 'Cache ID not found':
                 raise CacheNonexistent('Cache ID is nonexistent')
             else:
                 pp(req_call.json().get('error'))
                 raise HTTPRequestError('An error with the HTTP request occurred see above error message.')
         else:
             pp(req_call)
-            raise UnknownRequestError(f'Request status code: {req_call.status_code}\n '
-                             f'Unable to complete request action')
+            print('Request status code: ' + req_call.status_code)
+            raise UnknownRequestError('Unable to complete request action')
 
     def upload_cache(self, cache_id, source):
         headers = {'Authorization': self.service_token}
@@ -92,8 +102,8 @@ class KBaseCacheClient:
         with open(source, 'rb') as f:
             req_call = requests.post(endpoint, files={'file': f}, headers=headers)
 
-        if req_call.status_code is 200:
-            print(f'Cache {cache_id} has been successfully uploaded')
+        if req_call.status_code == 200:
+            print('Cache ' + cache_id + ' has been successfully uploaded')
             return True
         elif req_call.json().get('error'):
             pp(req_call.json())
@@ -102,20 +112,20 @@ class KBaseCacheClient:
         else:
             pp(req_call)
             pp(endpoint)
-            raise UnknownRequestError(f'Request status code: {req_call.status_code}\n'
-                             f'Unable to complete request action')
+            print('HTTP Status code: ' + req_call.status_code)
+            raise UnknownRequestError('Unable to complete request action')
 
     def delete_cache(self, cache_id):
         headers = {'Authorization': self.service_token}
         endpoint = self.cacheurl + 'cache/' + cache_id
         req_call = requests.delete(endpoint, headers=headers)
 
-        if req_call.status_code is 200:
-            print(f'Cache {cache_id} has been deleted.')
+        if req_call.status_code == 200:
+            print('Cache ' + cache_id + ' has been deleted.')
             return True
         elif req_call.json().get('error'):
-            if req_call.json().get('error') is 'Cache ID not found':
-                raise CacheNonexistent(f'Cache with id {cache_id} does not exist')
+            if req_call.json().get('error') == 'Cache ID not found':
+                raise CacheNonexistent('Cache with id ' + cache_id + ' does not exist')
             else:
                 pp(req_call.json())
                 pp(endpoint)
@@ -123,4 +133,5 @@ class KBaseCacheClient:
         else:
             pp(req_call)
             pp(endpoint)
-            raise UnknownRequestError(f'Request status code: {req_call.status_code}\n Unable to complete request action')
+            print('HTTP Status code: ' + req_call.status_code)
+            raise UnknownRequestError('Unable to complete request action')
