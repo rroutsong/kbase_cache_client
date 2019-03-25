@@ -3,7 +3,8 @@ import json
 import configparser
 import os
 from pprint import pprint as pp
-
+from .exceptions import NoCacheIdentifiers, HTTPRequestError, UnknownRequestError, DownloadDirNotaDir, \
+    DownloadDirNotWriteable, CacheNonexistent, AuthorizationTokenNotSet
 
 config = configparser.ConfigParser()
 if os.path.exists('test.cfg'):
@@ -21,22 +22,6 @@ else:
                                 '[KBASE_CACHE_SERVICE]\nTOKEN=<token>\n'
                                 'Or as an environmental variable KBASE_CACHE_TOKEN\n'
                                 'Consult KBase Administrators if you are not sure how to generate a token')
-
-
-class NoCacheIdentifiers(Exception):
-    pass
-
-class HTTPRequestError(Exception):
-    pass
-
-class UnknownRequestError(Exception):
-    pass
-
-class DownloadDirNotaDir(Exception):
-    pass
-
-class DownloadDirNotWriteable(Exception):
-    pass
 
 class KBaseCacheClient:
     def generate_cacheid(self, identifiers):
@@ -59,42 +44,26 @@ class KBaseCacheClient:
             self.cache_id = req_call['cache_id']
             return self.cache_id
 
-    def __init__(self, service, token=None, cache_id=None, identifiers=None):
+    def __init__(self, service, token=None):
         self.callback = service
         if not self.callback.endswith('/'):
             self.cacheurl = self.callback + '/cache/v1/'
         else:
             self.cacheurl = self.callback + 'cache/v1/'
+
         if token is None:
             if config.get('KBASE_CACHE_SERVICE', 'TOKEN', fallback=None):
                 self.service_token = config.get('KBASE_CACHE_SERVICE', 'TOKEN', fallback=None)
             elif os.getenv('KBASE_CACHE_TOKEN', None):
                 self.service_token = os.getenv('KBASE_CACHE_TOKEN', None)
+            else:
+                raise AuthorizationTokenNotSet('Please set your authorization token on class initialization.')
         else:
             self.service_token = token
-        # TODO: make note in docs that each instance of Cache Client should be used
-        #   for each cache.
-        if cache_id is None:
-            if identifiers is not None:
-                self.cache_id = self.generate_cacheid(identifiers)
-            else:
-                self.cache_id = None
-        else:
-            self.cache_id = cache_id
 
-    def get_cache_id(self):
-        if self.cache_id is not None:
-            return self.cache_id
-        else:
-            return False
-
-    def set_cache_id(self, new_cache_id):
-        self.cache_id = new_cache_id
-        return True
-
-    def download_cache(self, destination):
+    def download_cache(self, cache_id, destination):
         headers = {'Content-type': 'application/json', 'Authorization': self.service_token}
-        endpoint = self.cacheurl + 'cache/' + self.cache_id
+        endpoint = self.cacheurl + 'cache/' + cache_id
         req_call = requests.get(endpoint, headers=headers, stream=True)
 
         if req_call.status_code == 200:
@@ -106,46 +75,52 @@ class KBaseCacheClient:
         elif req_call.status_code == 404:
             raise ValueError(f'Cache with id {self.cache_id} does not exist')
         elif req_call.json().get('error'):
-            pp(req_call.json().get('error'))
-            raise HTTPRequestError('An error with the request occurred see above error message.')
+            if req_call.json().get('error') is 'Cache ID not found':
+                raise CacheNonexistent('Cache ID is nonexistent')
+            else:
+                pp(req_call.json().get('error'))
+                raise HTTPRequestError('An error with the HTTP request occurred see above error message.')
         else:
             pp(req_call)
             raise UnknownRequestError(f'Request status code: {req_call.status_code}\n '
                              f'Unable to complete request action')
 
-    def upload_cache(self, source):
+    def upload_cache(self, cache_id, source):
         headers = {'Authorization': self.service_token}
-        endpoint = self.cacheurl + 'cache/' + self.cache_id
+        endpoint = self.cacheurl + 'cache/' + cache_id
 
         with open(source, 'rb') as f:
             req_call = requests.post(endpoint, files={'file': f}, headers=headers)
 
-        if req_call.status_code == 200:
-            print('Cache ' + self.cache_id + ' has been successfully uploaded')
+        if req_call.status_code is 200:
+            print(f'Cache {cache_id} has been successfully uploaded')
             return True
         elif req_call.json().get('error'):
             pp(req_call.json())
             pp(endpoint)
-            raise HTTPRequestError('An error with the request occurred see above error message.')
+            raise HTTPRequestError('An error with the HTTP request occurred see above error message.')
         else:
             pp(req_call)
             pp(endpoint)
             raise UnknownRequestError(f'Request status code: {req_call.status_code}\n'
                              f'Unable to complete request action')
 
-    def delete_cache(self):
+    def delete_cache(self, cache_id):
         headers = {'Authorization': self.service_token}
-        endpoint = self.cacheurl + 'cache/' + self.cache_id
+        endpoint = self.cacheurl + 'cache/' + cache_id
         req_call = requests.delete(endpoint, headers=headers)
 
-        if req_call.status_code == 200:
-            print(f'Cache {self.cache_id} has been deleted.')
+        if req_call.status_code is 200:
+            print(f'Cache {cache_id} has been deleted.')
             return True
-        elif req_call.status_code == 404:
-            raise ValueError('Cache with id ' + self.cache_id + ' does not exist')
         elif req_call.json().get('error'):
-            pp(req_call.json().get('error'))
-            raise HTTPRequestError('An error with the request occurred see above error message.')
+            if req_call.json().get('error') is 'Cache ID not found':
+                raise CacheNonexistent(f'Cache with id {cache_id} does not exist')
+            else:
+                pp(req_call.json())
+                pp(endpoint)
+                raise HTTPRequestError('An error with the request occurred see above error message.')
         else:
             pp(req_call)
+            pp(endpoint)
             raise UnknownRequestError(f'Request status code: {req_call.status_code}\n Unable to complete request action')

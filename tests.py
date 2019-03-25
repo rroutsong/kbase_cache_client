@@ -22,16 +22,16 @@ class TestKbaseCacheClient(unittest.TestCase):
         shutil.rmtree(cls.test_dir)
 
     def test_gen_cache_id(self):
-        self.cacheid = self.KBC.generate_cacheid({'test': 'this is a test identifier to id a cache file'})
-        print(f'Cache ID is {self.cacheid}')
-        self.KBC.upload_cache(self.test_file)
+        cacheid = self.KBC.generate_cacheid({'test': 'this is a test identifier to id a cache file'})
+        print(f'Cache ID is {cacheid}')
+        self.KBC.upload_cache(cacheid, self.test_file)
         print('Cache uploaded.')
         destinationdir = os.path.join(self.test_dir, 'cache')
         os.mkdir(destinationdir)
         destination = os.path.join(destinationdir, 'cachedl.txt')
-        self.KBC.download_cache(destination)
+        self.KBC.download_cache(cacheid, destination)
         print('Cache downloaded.')
-        self.KBC.delete_cache()
+        self.KBC.delete_cache(cacheid)
         print('Cache deleted.')
 
 if __name__ == '__main__':
