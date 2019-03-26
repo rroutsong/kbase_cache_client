@@ -21,7 +21,9 @@ Create the client:
 
 .. code-block:: python
 
-    cache_client = KBaseCacheClient('https://appdev.kbase.us/services/')
+    cache_client = KBaseCacheClient('https://appdev.kbase.us/services/', token='xyz')
+
+Where ``token`` is a KBase developer or service token. This can also be left out and set as the ``KBASE_CACHE_TOKEN`` environment variable.
 
 Generate a cache ID:
 
@@ -33,19 +35,19 @@ Upload a file to a cache ID:
 
 .. code-block:: python
 
-    cache_client.upload_cache(my_file)
+    cache_client.upload_cache(cacheid, my_file)
 
 Download a cached file:
 
 .. code-block:: python
 
-    cache_client.download_cache(destination)
+    cache_client.download_cache(cacheid, destination)
 
 Delete a cached file:
 
 .. code-block:: python
 
-    cache_client.delete_cache()
+    cache_client.delete_cache(cacheid)
 
 Development
 ===========
