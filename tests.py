@@ -2,6 +2,7 @@ from kbase_cache_client.kbase_cache_client import KBaseCacheClient
 import unittest
 import os
 import shutil
+import tempfile
 
 _SERVICE_URL = 'https://appdev.kbase.us/services/'
 
@@ -26,7 +27,7 @@ class TestKbaseCacheClient(unittest.TestCase):
     def test_gen_cache_id(self):
         cacheid = self.KBC.generate_cacheid({'test': 'this is a test identifier to id a cache file'})
         print('Cache ID is ' + cacheid)
-        self.KBC.upload_cache(cacheid, self.test_file)
+        self.KBC.upload_cache(cacheid, path=self.test_file)
         print('Cache uploaded.')
         destinationdir = os.path.join(self.test_dir, 'cache')
         os.mkdir(destinationdir)
@@ -45,6 +46,15 @@ class TestKbaseCacheClient(unittest.TestCase):
         client = KBaseCacheClient(_SERVICE_URL, token='invalid_xyz')
         with self.assertRaises(RuntimeError):
             client.generate_cacheid({'test': 123})
+
+    def test_upload_strings(self):
+        cacheid = self.KBC.generate_cacheid({'test': 'string upload'})
+        self.KBC.upload_cache(cacheid, string='testxyz')
+        fd = tempfile.NamedTemporaryFile(mode='w+', delete=False)
+        self.KBC.download_cache(cacheid, fd.name)
+        print('DOWNLOADED', fd.read())
+        fd.close()
+        os.remove(fd.name)
 
 
 if __name__ == '__main__':

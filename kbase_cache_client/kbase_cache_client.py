@@ -87,12 +87,16 @@ class KBaseCacheClient:
             print('Request status code: ' + str(req_call.status_code))
             raise UnknownRequestError('Unable to complete request action')
 
-    def upload_cache(self, cache_id, source):
+    def upload_cache(self, cache_id, path=None, string=None):
         headers = {'Authorization': self.service_token}
         endpoint = self.cacheurl + 'cache/' + cache_id
-
-        with open(source, 'rb') as f:
-            req_call = requests.post(endpoint, files={'file': f}, headers=headers)
+        if path:
+            with open(path, 'rb') as f:
+                req_call = requests.post(endpoint, files={'file': f}, headers=headers)
+        elif string:
+            req_call = requests.post(endpoint, files={'file': ('data.txt', str.encode(string))}, headers=headers)
+        else:
+            raise RuntimeError('Pass in a path or a string of data to upload to the cache')
 
         if req_call.status_code == 200:
             print('Cache ' + cache_id + ' has been successfully uploaded')
