@@ -12,7 +12,7 @@ Install via pip using the KBase anaconda repository:
 
 .. code-block:: bash
 
-    pip install -i https://pypi.anaconda.org/kbase/simple kbase_cache_client
+    pip install --extra-index-url https://pypi.anaconda.org/kbase/simple kbase_cache_client
 
 Usage
 =====
@@ -35,13 +35,16 @@ Upload a file to a cache ID:
 
 .. code-block:: python
 
-    cache_client.upload_cache(cacheid, my_file)
+    # Upload file contents using a file path:
+    cache_client.upload_cache(cacheid, path=my_file)
+    # Upload a string as the cache contents
+    cache_client.upload_cache(cacheid, string='hello world')
 
 Download a cached file:
 
 .. code-block:: python
 
-    cache_client.download_cache(cacheid, destination)
+    cache_client.download_cache(cacheid, destination_path)
 
 Delete a cached file:
 
