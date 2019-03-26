@@ -3,7 +3,7 @@ KBase Cache Server Python Client
 
 This is a python client for the file cache service offered by KBase.
 
-[Documentation for the Caching Service can be found here](https://github.com/kbase/CachingService).
+Documentation for the KBase file cache server can be found here: https://github.com/kbase/CachingService
 
 Installation
 ============
@@ -57,12 +57,12 @@ First, activate a virtual environment with:
   python -m venv env
   source env/bin/activate
 
-Run tests with **`make test`**.
+Run tests with ``make test``
 
 Publishing
 ==========
 
-To build the pip package, first run **`make build`**.
+To build the pip package, first run ``make build``
 
 Publish the package to anaconda under the kbase org:
 
