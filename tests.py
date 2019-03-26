@@ -3,11 +3,13 @@ import unittest
 import os
 import shutil
 
+_SERVICE_URL = 'https://appdev.kbase.us/services/'
+
 
 class TestKbaseCacheClient(unittest.TestCase):
     @classmethod
     def setUp(cls):
-        cls.KBC = KBaseCacheClient('https://appdev.kbase.us/services/')
+        cls.KBC = KBaseCacheClient(_SERVICE_URL)
         cls.test_dir = os.path.join(os.path.dirname(__file__), 'tests')
         if not os.path.exists(cls.test_dir):
             os.mkdir(cls.test_dir)
@@ -33,6 +35,16 @@ class TestKbaseCacheClient(unittest.TestCase):
         print('Cache downloaded.')
         self.KBC.delete_cache(cacheid)
         print('Cache deleted.')
+
+    def test_invalid_url(self):
+        client = KBaseCacheClient('http://spacejam.com')
+        with self.assertRaises(RuntimeError):
+            client.generate_cacheid({'test': 123})
+
+    def test_invalid_auth(self):
+        client = KBaseCacheClient(_SERVICE_URL, token='invalid_xyz')
+        with self.assertRaises(RuntimeError):
+            client.generate_cacheid({'test': 123})
 
 
 if __name__ == '__main__':

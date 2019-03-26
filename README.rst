@@ -12,7 +12,7 @@ Install via pip using the KBase anaconda repository:
 
 .. code-block:: bash
 
-    pip install -i https://pypi.anaconda.org/kbase/simple kbase_cache_client
+    pip install --extra-index-url https://pypi.anaconda.org/kbase/simple kbase_cache_client
 
 Usage
 =====
